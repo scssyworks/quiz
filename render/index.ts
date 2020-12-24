@@ -1,3 +1,4 @@
+let randomizerTimer: any;
 const questionsList = [
   "Who’s your favorite superhero and why?",
   "Who is your favorite cartoon character and why?",
@@ -60,17 +61,38 @@ function getRandom(max: number): number {
   return Math.floor(Math.random() * max);
 }
 
-function getRandomNames() {
+function getRandomNames(): string {
   return names[getRandom(names.length)];
 }
 
-function getRandomQuestion() {
+function getRandomQuestion(): string {
   return questionsList[getRandom(questionsList.length)];
+}
+
+function createFriction(): Promise<boolean> {
+  let intervalMs = 0.1;
+  return new Promise<boolean>((resolve) => {
+    const intr = setInterval(() => {
+      const customEvent = new CustomEvent("intervaltimer", {
+        bubbles: true,
+        cancelable: true,
+        detail: {
+          timer: intervalMs * 1000,
+        },
+      });
+      document.body.dispatchEvent(customEvent);
+      intervalMs += 0.1;
+      if (intervalMs >= 1) {
+        clearInterval(intr);
+        resolve(true);
+      }
+    }, 1000);
+  });
 }
 
 const target = document.querySelector("app-root")!;
 
-const showQuestion = false;
+let showQuestion = false;
 
 function getTemplate(): string {
   return `
@@ -81,6 +103,44 @@ function getTemplate(): string {
 
 target.innerHTML = getTemplate();
 
-document.querySelector(".names")?.addEventListener("click", () => {
-  // TODO: Randomize names with momentum
+document.addEventListener("click", (event) => {
+  const btn = (event.target as HTMLElement).closest(".names");
+  if (btn) {
+    document.body.dispatchEvent(
+      new CustomEvent("intervaltimer", {
+        bubbles: true,
+        cancelable: true,
+        detail: {
+          timer: 0.1,
+        },
+      })
+    );
+    showQuestion = false;
+    target.innerHTML = getTemplate();
+
+    createFriction().then(() => {
+      showQuestion = true;
+      target.innerHTML = getTemplate();
+      clearInterval(randomizerTimer);
+      names.splice(
+        names.indexOf(
+          (document.querySelector(".names")!.textContent || "").trim()
+        ),
+        1
+      );
+      questionsList.splice(
+        questionsList.indexOf(
+          (document.querySelector(".question")!.textContent || "").trim()
+        ),
+        1
+      );
+    });
+  }
+});
+
+document.body.addEventListener("intervaltimer", (event) => {
+  clearInterval(randomizerTimer);
+  randomizerTimer = setInterval(() => {
+    target.innerHTML = getTemplate();
+  }, (event as CustomEvent).detail.timer);
 });
