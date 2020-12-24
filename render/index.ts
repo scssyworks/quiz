@@ -82,5 +82,5 @@ function getTemplate(): string {
 target.innerHTML = getTemplate();
 
 document.querySelector(".names")?.addEventListener("click", () => {
-  // TODO: Randomize names
+  // TODO: Randomize names with momentum
 });
